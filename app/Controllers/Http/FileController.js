@@ -1,10 +1,40 @@
 'use strict'
+const fs = require('fs')
+const axios = require('axios')
 
 class FileController {
 
   index({request, response}) {
+    this.processImages().then((data) => {
+      response.send('Deu certo')
+    }).catch((err) => {
+      response.send('error')
+    });
+  }
 
-    response.send(this.getImages())
+  async processImages() {
+    let data = this.getImages();
+    let example_image_1 = await this.download_image(data.images[0], './public/photo_1.png');
+
+  }
+
+  download_image(url, image_path) {
+    return axios({
+      url,
+      responseType: 'stream',
+    }).then(
+      response =>
+        new Promise((resolve, reject) => {
+          response.data
+            .pipe(fs.createWriteStream(image_path))
+            .on('finish', () => resolve(response.data))
+            .on('error', e => {
+                console.log(e);
+                reject(e)
+              }
+            );
+        }),
+    );
   }
 
   getImages() {
@@ -25,4 +55,4 @@ class FileController {
   }
 }
 
-module.exports = FileController
+module.exports = FileController;
