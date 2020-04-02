@@ -1,26 +1,32 @@
 'use strict'
-const fs = require('fs')
+const fs = require('fs-extra')
 const axios = require('axios')
 const archiver = require('archiver');
-const Helpers = use('Helpers');
 
 class FileController {
 
   async index({request, response}) {
 
     try {
-      await this.processImages();
+
+      // Delete old files
+      await fs.emptyDir('./public/picturesToDownload');
+      // Get images
+      let data = this.getImages();
+      // Download all images for array data.images
+      await this.processImages(data);
+      // Zip all images
       await this.zipImages();
+      // Send file to download
       response.download('./public/picturesToDownload/images.zip')
+
     } catch (e) {
       response.send('error')
     }
 
   }
 
-  async processImages() {
-    let data = this.getImages();
-
+  async processImages(data) {
     for (const [index, image] of data.images.entries()) {
       await this.downloadImage(image, `./public/picturesToDownload/photo_${index}.png`)
 
@@ -47,7 +53,11 @@ class FileController {
           reject(err);
         });
 
-      archive.directory('./public/picturesToDownload', false);
+      archive.glob('*.png', {
+        cwd: './public/picturesToDownload',
+        ignore: ['images.zip']
+      });
+
       archive.finalize();
 
     }))
@@ -56,10 +66,7 @@ class FileController {
 
   async downloadImage(url, image_path) {
 
-    const response = await axios.get(
-      url,
-      {responseType: 'stream'}
-    );
+    const response = await axios.get(url, {responseType: 'stream'});
 
     return new Promise((resolve, reject) => {
       response.data
