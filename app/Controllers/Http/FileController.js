@@ -1,40 +1,77 @@
 'use strict'
 const fs = require('fs')
 const axios = require('axios')
+const archiver = require('archiver');
+const Helpers = use('Helpers');
 
 class FileController {
 
-  index({request, response}) {
-    this.processImages().then((data) => {
-      response.send('Deu certo')
-    }).catch((err) => {
+  async index({request, response}) {
+
+    try {
+      await this.processImages();
+      await this.zipImages();
+      response.download('./public/picturesToDownload/images.zip')
+    } catch (e) {
       response.send('error')
-    });
+    }
+
   }
 
   async processImages() {
     let data = this.getImages();
-    let example_image_1 = await this.download_image(data.images[0], './public/photo_1.png');
+
+    for (const [index, image] of data.images.entries()) {
+      await this.downloadImage(image, `./public/picturesToDownload/photo_${index}.png`)
+
+    }
+  }
+
+  zipImages() {
+
+    // create a file to stream archive data to.
+    let output = fs.createWriteStream('./public/picturesToDownload/images.zip');
+    let archive = archiver('zip', {
+      zlib: {level: 9} // Sets the compression level.
+    });
+
+    return new Promise(((resolve, reject) => {
+      archive
+        .pipe(output)
+        .on('close', function () {
+          console.log(archive.pointer() + ' total bytes');
+          console.log('archiver has been finalized and the output file descriptor has closed.');
+          resolve();
+        })
+        .on('error', function (err) {
+          reject(err);
+        });
+
+      archive.directory('./public/picturesToDownload', false);
+      archive.finalize();
+
+    }))
 
   }
 
-  download_image(url, image_path) {
-    return axios({
+  async downloadImage(url, image_path) {
+
+    const response = await axios.get(
       url,
-      responseType: 'stream',
-    }).then(
-      response =>
-        new Promise((resolve, reject) => {
-          response.data
-            .pipe(fs.createWriteStream(image_path))
-            .on('finish', () => resolve(response.data))
-            .on('error', e => {
-                console.log(e);
-                reject(e)
-              }
-            );
-        }),
+      {responseType: 'stream'}
     );
+
+    return new Promise((resolve, reject) => {
+      response.data
+        .pipe(fs.createWriteStream(image_path))
+        .on('finish', () => resolve(response.data))
+        .on('error', e => {
+            console.log(e);
+            reject(e)
+          }
+        );
+    });
+
   }
 
   getImages() {
