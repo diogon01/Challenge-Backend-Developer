@@ -1,28 +1,39 @@
-# Adonis API application
+# API Challenge Backend Developer
 
-This is the boilerplate for creating an API server in AdonisJs, it comes pre-configured with.
+API features:
 
-1. Bodyparser
-2. Authentication
-3. CORS
-4. Lucid ORM
-5. Migrations and seeds
+- Delete old files
+- Get array of images url address 
+- Download all image from array
+- Create zip file
+- Send zip file
 
 ## Setup
 
-Use the adonis command to install the blueprint
+Use this command to install global adonis
 
 ```bash
-adonis new yardstick --api-only
+npm i -g @adonisjs/cli
 ```
 
-or manually clone the repo and then run `npm install`.
+### Install dependencies
 
-
-### Migrations
-
-Run the following command to run startup migrations.
+Run the following command in the root folder to install all dependencies.
 
 ```js
-adonis migration:run
+npm i
+```
+
+### Initialize API server 
+
+Run the following command in the root folder to initialize API.
+
+```js
+npm start
+```
+### Download images
+
+With the browser or using the postman access the following url
+```url
+http://127.0.0.1:3333/download
 ```

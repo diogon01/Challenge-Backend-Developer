@@ -21,7 +21,7 @@ class FileController {
       response.download('./public/picturesToDownload/images.zip')
 
     } catch (e) {
-      response.send('error')
+      response.status(417).send('error')
     }
 
   }
